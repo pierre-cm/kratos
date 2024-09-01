@@ -30,6 +30,14 @@ export type URLOfTheSettingsPage = string
  */
 export type RequiredAuthenticatorAssuranceLevel = "aal1" | "highest_available"
 /**
+ * If set to true will enable session location check.
+ */
+export type EnableLocationCheck = boolean
+/**
+ * The maximum allowed speed in meters per second allowed between two consecutive sessions locations.
+ */
+export type LocationCheckMaxAllowedSpeed = number
+/**
  * Define what the hook should do
  */
 export type WebHookConfiguration =
@@ -579,6 +587,10 @@ export interface OryKratosConfiguration2 {
         lifespan?: string
         privileged_session_max_age?: string
         required_aal?: RequiredAuthenticatorAssuranceLevel
+        location_check?: {
+          enabled?: EnableLocationCheck,
+          max_allowed_speed?: LocationCheckMaxAllowedSpeed
+        }
         after?: SelfServiceAfterSettings
         before?: SelfServiceBeforeSettings
       }

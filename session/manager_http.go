@@ -19,6 +19,7 @@ import (
 	"github.com/ory/kratos/selfservice/sessiontokenexchange"
 	"github.com/ory/kratos/ui/node"
 	"github.com/ory/x/otelx"
+	"github.com/ory/x/pointerx"
 
 	"github.com/ory/x/randx"
 
@@ -461,6 +462,38 @@ func (s *ManagerHTTP) ActivateSession(r *http.Request, session *Session, i *iden
 	span.SetAttributes(
 		attribute.String("identity.available_aal", session.Identity.InternalAvailableAAL.String),
 	)
+
+	if s.r.Config().SelfServiceSettingsLocationCheckEnabled(ctx) {
+		var ls *Session
+		var csLocation, lsLocation *LocationDetails
+		if len(session.Devices) > 0 {
+			csLocation = session.Devices[0].GetLocationDetails()
+		}
+
+		if csLocation != nil {
+			sess, _, err := s.r.SessionPersister().ListSessionsByIdentity(ctx, session.IdentityID, pointerx.Bool(true), 1, 1, session.ID, ExpandEverything)
+
+			if err == nil {
+				if len(sess) > 0 && len(sess[0].Devices) > 0 {
+					ls = &sess[0]
+					lsLocation = sess[0].Devices[0].GetLocationDetails()
+				}
+			}
+		}
+
+		if csLocation != nil && lsLocation != nil {
+			dist, err := csLocation.DistanceTo(lsLocation)
+			if err == nil {
+				duration := session.AuthenticatedAt.Sub(ls.AuthenticatedAt).Seconds()
+				maxSpeed := s.r.Config().SelfServiceSettingsMaxAllowedSpeed(ctx)
+				speed := dist / duration
+
+				if speed > float64(maxSpeed) {
+					return ErrSuspiciousLocation.WithDetail("location_details", csLocation).WithDetail("previous_location_details", lsLocation)
+				}
+			}
+		}
+	}
 
 	return nil
 }

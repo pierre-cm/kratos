@@ -43,8 +43,6 @@ type refreshWindowProvider interface {
 }
 
 // Location details of a Device
-//
-// swagger:model locationDetails
 type LocationDetails struct {
 	// Country of the IP Address.
 	Country *string `json:"country" faker:"-" db:"country"`

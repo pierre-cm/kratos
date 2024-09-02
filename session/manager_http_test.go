@@ -183,7 +183,82 @@ func TestManagerHTTP(t *testing.T) {
 		actualIdentity, err := reg.IdentityPool().GetIdentity(ctx, i.ID, identity.ExpandNothing)
 		require.NoError(t, err)
 		assert.EqualValues(t, identity.AuthenticatorAssuranceLevel1, actualIdentity.InternalAvailableAAL.String)
+	})
 
+	t.Run("suite=SessionActivateLocationCheck", func(t *testing.T) {
+		conf, reg := internal.NewFastRegistryWithMocks(t)
+		testhelpers.SetDefaultIdentitySchema(conf, "file://./stub/identity.schema.json")
+		conf.MustSet(ctx, config.ViperKeySelfServiceSettingsLocationCheckEnabled, true)
+
+		i := &identity.Identity{
+			Traits: []byte("{}"), State: identity.StateActive,
+			Credentials: map[identity.CredentialsType]identity.Credentials{
+				identity.CredentialsTypePassword: {Type: identity.CredentialsTypePassword, Identifiers: []string{x.NewUUID().String()}, Config: []byte(`{"hashed_password":"foo"}`)},
+			},
+		}
+		require.NoError(t, reg.PrivilegedIdentityPool().CreateIdentity(context.Background(), i))
+		assert.EqualValues(t, i.InternalAvailableAAL.String, "")
+
+		type TestStep struct {
+			city, country, lat, long string
+			t                        time.Time
+			expectError              bool
+		}
+
+		now := time.Now().UTC()
+
+		testSuite := []TestStep{
+			{
+				city: "", country: "", lat: "", long: "", t: now.Add(0 * time.Second),
+				expectError: false,
+			},
+			{
+				city: "", country: "", lat: "", long: "", t: now.Add(1 * time.Second),
+				expectError: false,
+			},
+			{
+				city: "Munich", country: "DE", lat: "48.1375", long: "11.5750", t: now.Add(2 * time.Second),
+				expectError: false,
+			},
+			{
+				city: "", country: "", lat: "", long: "", t: now.Add(3 * time.Second),
+				expectError: false,
+			},
+			{
+				city: "Munich", country: "DE", lat: "48.1375", long: "11.5750", t: now.Add(4 * time.Second),
+				expectError: false,
+			},
+			{
+				city: "Munich", country: "DE", lat: "48.1375", long: "11.5750", t: now.Add(5 * time.Second),
+				expectError: false,
+			},
+			{
+				city: "Barcelona", country: "ES", lat: "41.3828", long: "2.1769", t: now.Add(10 * time.Minute),
+				expectError: true,
+			},
+			{
+				city: "Munich", country: "DE", lat: "48.1375", long: "11.5750", t: now.Add(24 * time.Hour),
+				expectError: false,
+			},
+		}
+
+		for _, tc := range testSuite {
+
+			req := testhelpers.NewTestHTTPRequest(t, "GET", "/sessions/whoami", nil)
+			req.Header.Set("Cf-Ipcity", tc.city)
+			req.Header.Set("Cf-Ipcountry", tc.country)
+			req.Header.Set("Cf-Iplatitude", tc.lat)
+			req.Header.Set("Cf-Iplongitude", tc.long)
+			sess := session.NewInactiveSession()
+
+			if tc.expectError {
+				require.ErrorIs(t, reg.SessionManager().ActivateSession(req, sess, i, tc.t), session.ErrSuspiciousLocation)
+			} else {
+				require.NoError(t, reg.SessionManager().ActivateSession(req, sess, i, tc.t))
+			}
+			require.NoError(t, reg.SessionPersister().UpsertSession(context.Background(), sess))
+
+		}
 	})
 
 	t.Run("suite=SessionAddAuthenticationMethod", func(t *testing.T) {

@@ -147,6 +147,8 @@ const (
 	ViperKeySelfServiceSettingsRequestLifespan               = "selfservice.flows.settings.lifespan"
 	ViperKeySelfServiceSettingsPrivilegedAuthenticationAfter = "selfservice.flows.settings.privileged_session_max_age"
 	ViperKeySelfServiceSettingsRequiredAAL                   = "selfservice.flows.settings.required_aal"
+	ViperKeySelfServiceSettingsLocationCheckEnabled          = "selfservice.flows.settings.location_check.enabled"
+	ViperKeySelfServiceSettingsMaxAllowedSpeed               = "selfservice.flows.settings.location_check.max_allowed_speed"
 	ViperKeySelfServiceRecoveryAfter                         = "selfservice.flows.recovery.after"
 	ViperKeySelfServiceRecoveryBeforeHooks                   = "selfservice.flows.recovery.before.hooks"
 	ViperKeySelfServiceRecoveryEnabled                       = "selfservice.flows.recovery.enabled"
@@ -1615,7 +1617,6 @@ func (p *Config) DefaultConsistencyLevel(ctx context.Context) crdbx.ConsistencyL
 }
 
 func (p *Config) PasswordMigrationHook(ctx context.Context) *PasswordMigrationHook {
-
 	hook := &PasswordMigrationHook{
 		Enabled: p.GetProvider(ctx).BoolF(ViperKeyPasswordMigrationHook+".enabled", false),
 	}
@@ -1639,4 +1640,12 @@ func (p *Config) SelfServiceLoginFlowIdentifierFirstEnabled(ctx context.Context)
 
 func (p *Config) SecurityAccountEnumerationMitigate(ctx context.Context) bool {
 	return p.GetProvider(ctx).Bool(ViperKeySecurityAccountEnumerationMitigate)
+}
+
+func (p *Config) SelfServiceSettingsLocationCheckEnabled(ctx context.Context) bool {
+	return p.GetProvider(ctx).BoolF(ViperKeySelfServiceSettingsLocationCheckEnabled, false)
+}
+
+func (p *Config) SelfServiceSettingsMaxAllowedSpeed(ctx context.Context) int {
+	return p.GetProvider(ctx).IntF(ViperKeySelfServiceSettingsMaxAllowedSpeed, 2000)
 }

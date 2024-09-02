@@ -39,6 +39,9 @@ selfservice:
       ui_url: http://127.0.0.1:4455/settings
       privileged_session_max_age: 15m
       required_aal: highest_available
+      location_check:
+        enabled: true
+        max_allowed_speed: 555
 
     recovery:
       enabled: true
@@ -61,6 +64,7 @@ selfservice:
       lifespan: 10m
 
     registration:
+      enabled: true
       lifespan: 10m
       ui_url: http://127.0.0.1:4455/registration
       after:

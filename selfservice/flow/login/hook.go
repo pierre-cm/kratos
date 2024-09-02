@@ -138,7 +138,12 @@ func (e *HookExecutor) PostLoginHook(
 	}
 
 	if err := e.d.SessionManager().ActivateSession(r, s, i, time.Now().UTC()); err != nil {
-		return err
+		if errors.Is(err, session.ErrSuspiciousLocation) {
+			// TODO: discuss other possible ways to tag suspicious sessions
+			w.Header().Set("X-Kratos-Session-Suspicious-Location", "true")
+		} else {
+			return err
+		}
 	}
 
 	c := e.d.Config()

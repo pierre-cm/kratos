@@ -36,6 +36,12 @@ func registerFakes() {
 		panic(err)
 	}
 
+	if err := faker.AddProvider("ptr_geo_location_details", func(v reflect.Value) (interface{}, error) {
+		return pointerx.Ptr("city=Munich, country=Germany, latitude=48.1375, longitude=11.5750"), nil
+	}); err != nil {
+		panic(err)
+	}
+
 	if err := faker.AddProvider("ptr_ipv4", func(v reflect.Value) (interface{}, error) {
 		return pointerx.Ptr(faker.IPv4()), nil
 	}); err != nil {

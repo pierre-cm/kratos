@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ory/kratos/x"
+	"github.com/ory/x/pointerx"
 
 	"github.com/stretchr/testify/require"
 
@@ -113,6 +114,7 @@ func TestSession(t *testing.T) {
 				assert.Equal(t, tc.expected, *s.Devices[0].IPAddress)
 				assert.Equal(t, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36", *s.Devices[0].UserAgent)
 				assert.Equal(t, "", *s.Devices[0].Location)
+				assert.Equal(t, session.LocationDetails{}, *s.Devices[0].GetLocationDetails())
 			})
 		}
 	})
@@ -135,6 +137,7 @@ func TestSession(t *testing.T) {
 		assert.Equal(t, "54.155.246.155", *s.Devices[0].IPAddress)
 		assert.Equal(t, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36", *s.Devices[0].UserAgent)
 		assert.Equal(t, "", *s.Devices[0].Location)
+		assert.Equal(t, session.LocationDetails{}, *s.Devices[0].GetLocationDetails())
 	})
 
 	t.Run("case=client information CF true client IP set", func(t *testing.T) {
@@ -155,6 +158,7 @@ func TestSession(t *testing.T) {
 		assert.Equal(t, "54.155.246.155", *s.Devices[0].IPAddress)
 		assert.Equal(t, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36", *s.Devices[0].UserAgent)
 		assert.Equal(t, "", *s.Devices[0].Location)
+		assert.Equal(t, session.LocationDetails{}, *s.Devices[0].GetLocationDetails())
 	})
 
 	t.Run("case=client information CF", func(t *testing.T) {
@@ -163,6 +167,8 @@ func TestSession(t *testing.T) {
 		req.Header.Set("True-Client-IP", "54.155.246.232")
 		req.Header.Set("Cf-Ipcity", "Munich")
 		req.Header.Set("Cf-Ipcountry", "Germany")
+		req.Header.Set("Cf-Iplatitude", "48.1375")
+		req.Header.Set("Cf-Iplongitude", "11.5750")
 
 		s := session.NewInactiveSession()
 		require.NoError(t, reg.SessionManager().ActivateSession(req, s, &identity.Identity{NID: x.NewUUID(), State: identity.StateActive}, authAt))
@@ -174,6 +180,12 @@ func TestSession(t *testing.T) {
 		assert.Equal(t, "54.155.246.232", *s.Devices[0].IPAddress)
 		assert.Equal(t, "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36", *s.Devices[0].UserAgent)
 		assert.Equal(t, "Munich, Germany", *s.Devices[0].Location)
+		assert.Equal(t, session.LocationDetails{
+			Country:   pointerx.Ptr("Germany"),
+			City:      pointerx.Ptr("Munich"),
+			Latitude:  pointerx.Ptr("48.1375"),
+			Longitude: pointerx.Ptr("11.5750"),
+		}, *s.Devices[0].GetLocationDetails())
 	})
 
 	for k, tc := range []struct {

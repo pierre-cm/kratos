@@ -834,6 +834,23 @@
       "enum": ["aal1", "highest_available"],
       "default": "highest_available"
     },
+    "featureLocationCheck": {
+      "title": "Session Location Check Configuration",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "If set to true will enable session location check.",
+          "default": false
+        },
+        "max_allowed_speed": {
+          "type": "integer",
+          "description": "The maximum allowed speed in meters per second allowed between two consecutive sessions locations.",
+          "default": 555
+        }
+      }
+    },
     "selfServiceAfterSettings": {
       "type": "object",
       "additionalProperties": false,
@@ -1211,6 +1228,9 @@
                 },
                 "required_aal": {
                   "$ref": "#/definitions/featureRequiredAal"
+                },
+                "location_check": {
+                  "$ref": "#/definitions/featureLocationCheck"
                 },
                 "after": {
                   "$ref": "#/definitions/selfServiceAfterSettings"
